@@ -52,17 +52,32 @@ Notification Layer
 
 ## Tech Stack
 
-| Layer | Tech |
-|---|---|
-| Agent runtime | Python 3.11 |
-| LLM | Claude (claude-3-5-haiku for speed, claude-3-5-sonnet for complex extractions) |
-| Web tools | httpx + BeautifulSoup (lightweight), Playwright (JS-heavy sites) |
-| Search | Brave Search API / SerpAPI |
-| Scheduler | Internal polling loop (same as SWARM worker) |
-| DB | PostgreSQL (same Railway instance as SWARM) |
-| Notifications | Resend (email), SWARM notifications API |
-| Deployment | Railway (standalone service) |
-| Frontend | Next.js (lightweight, can share SWARM's or be standalone) |
+| Layer | Tech | Why |
+|---|---|---|
+| Agent runtime | Python 3.11 | Best AI/scraping ecosystem |
+| LLM | Claude haiku (speed) + sonnet (complex extraction) | Fast + smart where needed |
+| Job queue | Celery + Redis | Production-grade, scales horizontally |
+| HTTP (fast) | httpx (async) | Fast, async, connection pooling |
+| HTML parsing | BeautifulSoup4 | Lightweight parsing |
+| Browser automation | Playwright + playwright-stealth | Handles JS-heavy + anti-bot sites |
+| Proxy layer | ScraperAPI | Rotating residential proxies, handles CAPTCHAs, pay-per-request |
+| Search | Brave Search API | Clean, fast, no Google restrictions |
+| DB | PostgreSQL (Railway, same as SWARM) | Single source of truth |
+| Notifications | Resend (email) + SWARM notifications API | Email-first, extensible |
+| Deployment | Railway (2 services: API + Celery worker) | Already there, easy |
+| Frontend | Standalone Next.js or SWARM-integrated | TBD |
+
+### Scraping Strategy — Tiered (tries cheapest first)
+
+```
+Tier 1: Official API (eBay API, Amazon PA API) — free, fast, reliable
+Tier 2: httpx + BeautifulSoup — fast, cheap, works on simple sites
+Tier 3: ScraperAPI proxy — rotating IPs, handles basic bot detection
+Tier 4: Playwright + stealth — full browser, JS rendering, anti-bot bypass
+Tier 5: Playwright + ScraperAPI residential proxy — nuclear option
+```
+
+Each tool tries the appropriate tier based on the target platform.
 
 ---
 
